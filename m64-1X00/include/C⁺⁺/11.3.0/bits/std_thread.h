@@ -459,7 +459,7 @@ moving another thread to it.\n");
 
 	template<typename... _Args>
 	  _State_impl(_Args&&... __args)
-	  : _M_func{{std::forward<_Args>(__args)...}}
+	  : _M_func(std::forward<_Args>(__args)...)
 	  { }
 
 	void
@@ -493,6 +493,12 @@ moving another thread to it.\n");
     template<typename _Tuple>
       struct _Invoker
       {
+	template<typename... _Args>
+	  explicit
+	  _Invoker(_Args&&... __args)
+	  : _M_t(std::forward<_Args>(__args)...)
+	  { }
+
 	_Tuple _M_t;
 
 	template<typename>
