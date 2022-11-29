@@ -219,6 +219,9 @@ struct FutureBase : public FutureStatic<true>
   template<class Clock, class Duration>
   future_status wait_until(const std::chrono::time_point<Clock,Duration>& time) const
   {
+#if __cplusplus > 201703L
+	static_assert(std::chrono::is_clock_v<Clock>);
+#endif
     return wait_for(time - Clock::now());
   }
 };

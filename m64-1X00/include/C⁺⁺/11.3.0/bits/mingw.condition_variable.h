@@ -278,7 +278,9 @@ namespace vista
 class condition_variable
 {
     static constexpr DWORD kInfinite = 0xffffffffl;
+#ifdef __cpp_lib_jthread
     std::shared_ptr<std::mutex> mMutex;
+#endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
     CONDITION_VARIABLE cvariable_ = CONDITION_VARIABLE_INIT;
@@ -399,6 +401,9 @@ public:
     cv_status wait_until (std::unique_lock<std::mutex>& lock,
                           const std::chrono::time_point<Clock,Duration>& abs_time)
     {
+#if __cplusplus > 201703L
+	    static_assert(std::chrono::is_clock_v<Clock>);
+#endif
         return wait_for(lock, abs_time - Clock::now());
     }
     template <class Clock, class Duration, class Predicate>
