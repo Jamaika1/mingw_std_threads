@@ -501,6 +501,7 @@ typedef recursive_timed_mutex timed_mutex;
 	__throw_system_error(__e);
     }
 
+    _GLIBCXX_NODISCARD
     bool
     try_lock() noexcept
     {
@@ -630,6 +631,7 @@ typedef recursive_timed_mutex timed_mutex;
 	__throw_system_error(__e);
     }
 
+    _GLIBCXX_NODISCARD
     bool
     try_lock() noexcept
     {
@@ -638,11 +640,13 @@ typedef recursive_timed_mutex timed_mutex;
     }
 
     template <class _Rep, class _Period>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_for(const chrono::duration<_Rep, _Period>& __rtime)
       { return _M_try_lock_for(__rtime); }
 
     template <class _Clock, class _Duration>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_until(const chrono::time_point<_Clock, _Duration>& __atime)
       { return _M_try_lock_until(__atime); }
@@ -705,6 +709,7 @@ typedef recursive_timed_mutex timed_mutex;
 	__throw_system_error(__e);
     }
 
+    _GLIBCXX_NODISCARD
     bool
     try_lock() noexcept
     {
@@ -713,11 +718,13 @@ typedef recursive_timed_mutex timed_mutex;
     }
 
     template <class _Rep, class _Period>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_for(const chrono::duration<_Rep, _Period>& __rtime)
       { return _M_try_lock_for(__rtime); }
 
     template <class _Clock, class _Duration>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_until(const chrono::time_point<_Clock, _Duration>& __atime)
       { return _M_try_lock_until(__atime); }
@@ -772,6 +779,7 @@ typedef recursive_timed_mutex timed_mutex;
       _M_locked = true;
     }
 
+    _GLIBCXX_NODISCARD
     bool
     try_lock()
     {
@@ -783,6 +791,7 @@ typedef recursive_timed_mutex timed_mutex;
     }
 
     template<typename _Rep, typename _Period>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_for(const chrono::duration<_Rep, _Period>& __rtime)
       {
@@ -794,6 +803,7 @@ typedef recursive_timed_mutex timed_mutex;
       }
 
     template<typename _Clock, typename _Duration>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_until(const chrono::time_point<_Clock, _Duration>& __atime)
       {
@@ -855,6 +865,7 @@ typedef recursive_timed_mutex timed_mutex;
       ++_M_count;
     }
 
+    _GLIBCXX_NODISCARD
     bool
     try_lock()
     {
@@ -871,6 +882,7 @@ typedef recursive_timed_mutex timed_mutex;
     }
 
     template<typename _Rep, typename _Period>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_for(const chrono::duration<_Rep, _Period>& __rtime)
       {
@@ -887,6 +899,7 @@ typedef recursive_timed_mutex timed_mutex;
       }
 
     template<typename _Clock, typename _Duration>
+      _GLIBCXX_NODISCARD
       bool
       try_lock_until(const chrono::time_point<_Clock, _Duration>& __atime)
       {
@@ -993,6 +1006,7 @@ typedef recursive_timed_mutex timed_mutex;
    *  Sequentially calls try_lock() on each argument.
    */
   template<typename _L1, typename _L2, typename... _L3>
+    _GLIBCXX_NODISCARD
     inline int
     try_lock(_L1& __l1, _L2& __l2, _L3&... __l3)
     {
