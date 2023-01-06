@@ -146,7 +146,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     using _State_ptr = unique_ptr<_State>;
 
     using native_handle_type = __gthread_t;
-#elif not defined(MINGWSTD)
+#elif !defined(MINGWSTD)
     using native_handle_type = int;
 #endif
 
