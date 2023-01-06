@@ -1,6 +1,6 @@
 // <shared_mutex> -*- C++ -*-
 
-// Copyright (C) 2013-2021 Free Software Foundation, Inc.
+// Copyright (C) 2013-2022 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -36,26 +36,11 @@
 #include <bits/move.h>        // move, __exchange
 #include <bits/std_mutex.h>   // defer_lock_t
 
-#define MINGWSTD
-
-namespace mingw_stdthread
-{
-namespace vista
-{
-  class condition_variable_any;
-}
-}
-
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @addtogroup mutexes
-   * @{
-   */
-
 #ifdef MINGWSTD
+namespace mingw_stdthread {
+namespace vista { class condition_variable_any; }
+}
+
 //  Might be able to use native Slim Reader-Writer (SRW) locks.
 #ifdef _WIN32
 #include <sdkddkver.h>  //  Detect Windows version.
@@ -69,12 +54,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #endif
 #endif
 
+namespace mingw_stdthread {
 #if defined(_WIN32) && !(WINVER >= _WIN32_WINNT_WIN7)
 #include <cassert>
 //  Define a portable atomics-based shared_mutex
-namespace portable
-{
-class shared_mutex
+namespace portable { class shared_mutex
 {
     typedef uint_fast16_t counter_type;
     std::atomic<counter_type> mCounter {0};
@@ -210,10 +194,8 @@ public:
 //  I define the class without try_* functions in that case.
 //    Only fully-featured implementations will be placed into namespace std.
 
-namespace windows7
-{
 //  We already #include "mingw.mutex.h". May as well reduce redundancy.
-class shared_mutex : std::windows7::mutex
+namespace windows7 { class shared_mutex : mingw_stdthread::windows7::mutex
 {
     //using _Base = shared_mutex;
 //    Allow condition_variable_any (and only condition_variable_any) to treat a
@@ -226,10 +208,10 @@ public:
     shared_mutex(const shared_mutex&) = delete;
     shared_mutex& operator=(const shared_mutex&) = delete;*/
 
-    using std::windows7::mutex::native_handle_type;
-    using std::windows7::mutex::lock;
-    using std::windows7::mutex::unlock;
-    using std::windows7::mutex::native_handle;
+    using mingw_stdthread::windows7::mutex::native_handle_type;
+    using mingw_stdthread::windows7::mutex::lock;
+    using mingw_stdthread::windows7::mutex::unlock;
+    using mingw_stdthread::windows7::mutex::native_handle;
 
     //typedef void* native_handle_type;
     //native_handle_type native_handle() { return _Base::native_handle(); }
@@ -248,7 +230,7 @@ public:
 
 //  TryAcquireSRW functions are a Windows 7 feature.
 #if (WINVER >= _WIN32_WINNT_WIN7)
-    using std::windows7::mutex::try_lock;
+    using mingw_stdthread::windows7::mutex::try_lock;
     //bool try_lock() { return _Base::try_lock(); }
     //bool try_lock_shared() { return _Base::try_lock_shared(); }
     bool try_lock_shared (void) { return TryAcquireSRWLockShared(native_handle()) != 0; }
@@ -257,11 +239,12 @@ public:
 
 } //  Namespace windows7
 #endif  //  Compiling for Vista
+} //  Namespace mingw_stdthread
 
 #if (defined(_WIN32) && (WINVER >= _WIN32_WINNT_WIN7))
-using std::windows7::shared_mutex;
+using mingw_stdthread::windows7::shared_mutex;
 #else
-using std::portable::shared_mutex;
+using mingw_stdthread::portable::shared_mutex;
 #endif
 
 class shared_timed_mutex : shared_mutex
@@ -381,12 +364,21 @@ public:
 #endif
     }
 };
+#endif
 
-#elif __cplusplus >= 201402L
-
+#if __cplusplus >= 201402L
 #if ! (_GLIBCXX_USE_PTHREAD_RWLOCK_T && _GTHREAD_USE_MUTEX_TIMEDLOCK)
 # include <condition_variable>
 #endif
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
 
 #ifdef _GLIBCXX_HAS_GTHREADS
 
