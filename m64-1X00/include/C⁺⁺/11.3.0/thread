@@ -1,6 +1,6 @@
 // <thread> -*- C++ -*-
 
-// Copyright (C) 2008-2021 Free Software Foundation, Inc.
+// Copyright (C) 2008-2022 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -55,8 +55,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    * @{
    */
 
-#ifndef MINGWSTD
   // std::thread is defined in <bits/std_thread.h>
+#ifndef MINGWSTD
 #if __cpp_lib_three_way_comparison
   inline strong_ordering
   operator<=>(thread::id __x, thread::id __y) noexcept
@@ -220,7 +220,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  {
 	    static_assert(is_invocable_v<decay_t<_Callable>,
 					 decay_t<_Args>...>,
-			  "std::thread arguments must be invocable after"
+			  "std::jthread arguments must be invocable after"
 			  " conversion to rvalues");
 	    return thread{std::forward<_Callable>(__f),
 			  std::forward<_Args>(__args)...};

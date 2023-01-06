@@ -304,23 +304,23 @@ class condition_variable
     inline static void after_wait (void *) { }
 #endif
 
-    bool wait_impl (std::unique_lock<std::xp::mutex> & lock, DWORD time)
+    bool wait_impl (std::unique_lock<mingw_stdthread::xp::mutex> & lock, DWORD time)
     {
-        using mutex_handle_type = typename std::xp::mutex::native_handle_type;
+        using mutex_handle_type = typename mingw_stdthread::xp::mutex::native_handle_type;
         static_assert(std::is_same<mutex_handle_type, PCRITICAL_SECTION>::value,
                       "Native Win32 condition variable requires std::mutex to \
 use native Win32 critical section objects.");
-        std::xp::mutex * pmutex = lock.release();
+        mingw_stdthread::xp::mutex * pmutex = lock.release();
         before_wait(pmutex);
         BOOL success = SleepConditionVariableCS(&cvariable_,
                                                 pmutex->native_handle(),
                                                 time);
         after_wait(pmutex);
-        lock = std::unique_lock<std::xp::mutex>(*pmutex, std::adopt_lock);
+        lock = std::unique_lock<mingw_stdthread::xp::mutex>(*pmutex, std::adopt_lock);
         return success;
     }
 
-    bool wait_unique (std::windows7::mutex * pmutex, DWORD time)
+    bool wait_unique (mingw_stdthread::windows7::mutex * pmutex, DWORD time)
     {
         before_wait(pmutex);
         BOOL success = SleepConditionVariableSRW( native_handle(),
@@ -335,11 +335,11 @@ use native Win32 critical section objects.");
         after_wait(pmutex);
         return success;
     }
-    bool wait_impl (std::unique_lock<std::windows7::mutex> & lock, DWORD time)
+    bool wait_impl (std::unique_lock<mingw_stdthread::windows7::mutex> & lock, DWORD time)
     {
-        std::windows7::mutex * pmutex = lock.release();
+        mingw_stdthread::windows7::mutex * pmutex = lock.release();
         bool success = wait_unique(pmutex, time);
-        lock = std::unique_lock<std::windows7::mutex>(*pmutex, std::adopt_lock);
+        lock = std::unique_lock<mingw_stdthread::windows7::mutex>(*pmutex, std::adopt_lock);
         return success;
     }
 public:
@@ -542,14 +542,14 @@ public:
 class condition_variable_any
 {
     static constexpr DWORD kInfinite = 0xffffffffl;
-    using native_shared_mutex = std::windows7::shared_mutex;
+    using native_shared_mutex = mingw_stdthread::windows7::shared_mutex;
 
     condition_variable internal_cv_ {};
 
 //    When available, the SRW-based mutexes should be faster than the
 //  CriticalSection-based mutexes. Only try_lock will be unavailable in Vista,
 //  and try_lock is not used by condition_variable_any.
-    std::windows7::mutex internal_mutex_ {};
+    mingw_stdthread::windows7::mutex internal_mutex_ {};
 
     template<class L>
     bool wait_impl (L & lock, DWORD time)
