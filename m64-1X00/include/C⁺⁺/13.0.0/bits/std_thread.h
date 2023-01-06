@@ -153,8 +153,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   public:
 #ifdef _GLIBCXX_HAS_GTHREADS
     using native_handle_type = __gthread_t;
-#else
-#ifndef MINGWSTD
+#elif !defined(MINGWSTD)
     using native_handle_type = int;
 #endif
 #endif
