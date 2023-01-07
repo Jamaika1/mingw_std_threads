@@ -39,6 +39,9 @@
 #include <tuple>		// std::tuple
 #include <bits/functional_hash.h> // std::hash
 #include <bits/invoke.h>	// std::__invoke
+#if __cplusplus <= 201703L
+# include <bits/mingw.invoke.h>
+#endif
 #include <bits/refwrap.h>       // not required, but helpful to users
 #include <bits/unique_ptr.h>	// std::unique_ptr
 
@@ -47,7 +50,6 @@
 #else
 # include <errno.h>
 # include <bits/functexcept.h>
-# include <bits/mingw.invoke.h>
 #endif
 
 #ifdef MINGWSTD
@@ -112,7 +114,13 @@ namespace detail
 
         void callFunc()
         {
+#if __cplusplus < 201703L
             detail::invoke(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#elif (__cplusplus >= 201703L && __cplusplus < 202106L)
+            std::__invoke(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#else
+            std::__invoke_r<void>(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#endif
         }
     };
 
@@ -151,9 +159,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   class thread
   {
   public:
+
+#ifndef MINGWSTD
 #ifdef _GLIBCXX_HAS_GTHREADS
     using native_handle_type = __gthread_t;
-#elif !defined(MINGWSTD)
+#elif
     using native_handle_type = int;
 #endif
 #endif
@@ -613,7 +623,7 @@ moving another thread to it.\n");
     inline thread::id
     get_id() noexcept
     {
-#ifndef _GLIBCXX_HAS_GTHREADS
+#if !defined _GLIBCXX_HAS_GTHREADS && !defined MINGWSTD
       return thread::id(1);
 #elif defined _GLIBCXX_NATIVE_THREAD_ID
       return thread::id(_GLIBCXX_NATIVE_THREAD_ID);
@@ -628,10 +638,9 @@ moving another thread to it.\n");
     inline void
     yield() noexcept
     {
-#if defined _GLIBCXX_HAS_GTHREADS && defined _GLIBCXX_USE_SCHED_YIELD
+#if defined _GLIBCXX_HAS_GTHREADS && defined _GLIBCXX_USE_SCHED_YIELD && !defined MINGWSTD
       __gthread_yield();
-#endif
-#ifdef MINGWSTD
+#elif defined MINGWSTD
       Sleep(0);
 #endif
     }
