@@ -40,7 +40,7 @@
 #include <bits/functexcept.h>
 #include <bits/gthr.h>
 
-#ifndef _GLIBCXX_HAS_GTHREADS
+#if __cplusplus <= 201703L
 # include <bits/mingw.invoke.h>
 #endif
 
@@ -324,7 +324,7 @@ protected:
 //  standard compliance, this must be defined in same class and at the same
 //  access-control level as every other variable in the timed_mutex.
 #if STDMUTEX_RECURSION_CHECKS
-    friend class vista::condition_variable;
+    friend class mingw_stdthread::vista::condition_variable;
     _OwnerThread mOwnerThread {};
 #endif
 public:
