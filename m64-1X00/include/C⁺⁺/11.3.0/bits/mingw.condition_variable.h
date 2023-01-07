@@ -49,7 +49,7 @@
 #include <synchapi.h>
 #endif
 
-#include <bits/std_mutex.h>
+#include <mutex>
 #include <shared_mutex>
 
 #if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0501)
