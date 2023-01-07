@@ -32,7 +32,7 @@
 #include <bits/this_thread_sleep.h> // std::this_thread::sleep_for, sleep_until
 
 //  Mutexes and condition variables are used explicitly.
-#include <mutex>
+#include <bits/std_mutex.h>
 #include "mingw.condition_variable.h"
 
 #if (defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR))
@@ -219,9 +219,6 @@ struct FutureBase : public FutureStatic<true>
   template<class Clock, class Duration>
   future_status wait_until(const std::chrono::time_point<Clock,Duration>& time) const
   {
-#if __cplusplus > 201703L
-	static_assert(std::chrono::is_clock_v<Clock>);
-#endif
     return wait_for(time - Clock::now());
   }
 };

@@ -44,6 +44,15 @@
 # include <bits/mingw.invoke.h>
 #endif
 
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
+
 #ifdef MINGWSTD
 #include <atomic>
 #if STDMUTEX_RECURSION_CHECKS
@@ -66,16 +75,11 @@
 #include <handleapi.h>
 #endif
 
-namespace mingw_stdthread
-{
 //    The _NonRecursive class has mechanisms that do not play nice with direct
 //  manipulation of the native handle. This forward declaration is part of
 //  a friend class declaration.
 #if STDMUTEX_RECURSION_CHECKS
-namespace vista
-{
-class condition_variable;
-}
+namespace vista { class condition_variable; }
 #endif
 
 class recursive_mutex
@@ -292,12 +296,11 @@ public:
     }
 };
 } //  Namespace xp
-} //  Namespace mingw_stdthread
 
 #if (WINVER >= _WIN32_WINNT_WIN7)
-using mingw_stdthread::windows7::mutex;
+using windows7::mutex;
 #else
-using mingw_stdthread::xp::mutex;
+using xp::mutex;
 #endif
 
 class recursive_timed_mutex
@@ -430,19 +433,8 @@ typedef recursive_timed_mutex timed_mutex;
 #endif
 #endif // MINGWSTD
 
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @defgroup mutexes Mutexes
-   * @ingroup concurrency
-   *
-   * Classes for mutex support.
-   * @{
-   */
-
 #ifdef _GLIBCXX_HAS_GTHREADS
+
   // Common base class for std::mutex and std::timed_mutex
   class __mutex_base
   {
