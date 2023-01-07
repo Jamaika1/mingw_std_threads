@@ -39,9 +39,6 @@
 #include <tuple>		// std::tuple
 #include <bits/functional_hash.h> // std::hash
 #include <bits/invoke.h>	// std::__invoke
-#if __cplusplus <= 201703L
-# include <bits/mingw.invoke.h>
-#endif
 #include <bits/refwrap.h>       // not required, but helpful to users
 #include <bits/unique_ptr.h>	// std::unique_ptr
 
@@ -50,6 +47,7 @@
 #else
 # include <errno.h>
 # include <bits/functexcept.h>
+# include <bits/mingw.invoke.h>
 #endif
 
 #ifdef MINGWSTD
@@ -163,7 +161,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #ifndef MINGWSTD
 #ifdef _GLIBCXX_HAS_GTHREADS
     using native_handle_type = __gthread_t;
-#elif
+#else
     using native_handle_type = int;
 #endif
 #endif

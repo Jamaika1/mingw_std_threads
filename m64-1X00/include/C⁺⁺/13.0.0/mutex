@@ -920,9 +920,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     ///  CriticalSection-based mutexes. Only try_lock will be unavailable in Vista,
     ///  and try_lock is not used by once_flag.
 #if (_WIN32_WINNT == _WIN32_WINNT_VISTA)
-    mingw_stdthread::windows7::mutex mMutex;
+    windows7::mutex mMutex;
 #else
-    mingw_stdthread::xp::mutex mMutex;
+    xp::mutex mMutex;
 #endif
     atomic_bool mHasRun;
 #endif

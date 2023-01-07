@@ -113,7 +113,13 @@ namespace detail
 
         void callFunc()
         {
+#if __cplusplus < 201703L
             detail::invoke(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#elif (__cplusplus >= 201703L && __cplusplus < 202106L)
+            std::__invoke(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#else
+            std::__invoke_r<void>(std::move(mFunc), std::move(std::get<S>(mArgs)) ...);
+#endif
         }
     };
 
@@ -135,7 +141,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   class thread
   {
   public:
+#ifndef MINGWSTD
 #ifdef _GLIBCXX_HAS_GTHREADS
+
     // Abstract base class for types that wrap arbitrary functors to be
     // invoked in the new thread of execution.
     struct _State
@@ -146,8 +154,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     using _State_ptr = unique_ptr<_State>;
 
     using native_handle_type = __gthread_t;
-#elif !defined(MINGWSTD)
+#else
     using native_handle_type = int;
+#endif
 #endif
 
     /// thread::id
@@ -585,7 +594,7 @@ moving another thread to it.\n");
     inline thread::id
     get_id() noexcept
     {
-#ifndef _GLIBCXX_HAS_GTHREADS
+#if !defined _GLIBCXX_HAS_GTHREADS && !defined MINGWSTD
       return thread::id(1);
 #elif defined _GLIBCXX_NATIVE_THREAD_ID
       return thread::id(_GLIBCXX_NATIVE_THREAD_ID);
@@ -600,10 +609,9 @@ moving another thread to it.\n");
     inline void
     yield() noexcept
     {
-#if defined _GLIBCXX_HAS_GTHREADS && defined _GLIBCXX_USE_SCHED_YIELD
+#if defined _GLIBCXX_HAS_GTHREADS && defined _GLIBCXX_USE_SCHED_YIELD && !defined MINGWSTD
       __gthread_yield();
-#endif
-#ifdef MINGWSTD
+#elif defined MINGWSTD
       Sleep(0);
 #endif
     }

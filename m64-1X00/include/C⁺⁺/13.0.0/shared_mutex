@@ -56,19 +56,28 @@ namespace vista { class condition_variable_any; }
 #endif
 #endif
 
-namespace mingw_stdthread {
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
+
 #if defined(_WIN32) && !(WINVER >= _WIN32_WINNT_WIN7)
 #include <cassert>
+
 //  Define a portable atomics-based shared_mutex
 namespace portable { class shared_mutex
 {
     typedef uint_fast16_t counter_type;
-    std::atomic<counter_type> mCounter {0};
-    static constexpr counter_type kWriteBit = 1 << (std::numeric_limits<counter_type>::digits - 1);
+    atomic<counter_type> mCounter {0};
+    static constexpr counter_type kWriteBit = 1 << (numeric_limits<counter_type>::digits - 1);
 
 #if STDMUTEX_RECURSION_CHECKS
 //  Runtime checker for verifying owner threads. Note: Exclusive mode only.
-    std::_OwnerThread mOwnerThread {};
+    _OwnerThread mOwnerThread {};
 #endif
 public:
     typedef shared_mutex * native_handle_type;
@@ -82,25 +91,25 @@ public:
     ~shared_mutex ()
     {
 //  Terminate if someone tries to destroy an owned mutex.
-        assert(mCounter.load(std::memory_order_relaxed) == 0);
+        assert(mCounter.load(memory_order_relaxed) == 0);
     }
 
     void lock_shared (void)
     {
-        counter_type expected = mCounter.load(std::memory_order_relaxed);
+        counter_type expected = mCounter.load(memory_order_relaxed);
         do
         {
 //  Delay if writing or if too many readers are attempting to read.
             if (expected >= kWriteBit - 1)
             {
                 using namespace std;
-                expected = mCounter.load(std::memory_order_relaxed);
+                expected = mCounter.load(memory_order_relaxed);
                 continue;
             }
             if (mCounter.compare_exchange_weak(expected,
                                                static_cast<counter_type>(expected + 1),
-                                               std::memory_order_acquire,
-                                               std::memory_order_relaxed))
+                                               memory_order_acquire,
+                                               memory_order_relaxed))
                 break;
         }
         while (true);
@@ -108,14 +117,14 @@ public:
 
     bool try_lock_shared (void)
     {
-        counter_type expected = mCounter.load(std::memory_order_relaxed) & static_cast<counter_type>(~kWriteBit);
+        counter_type expected = mCounter.load(memory_order_relaxed) & static_cast<counter_type>(~kWriteBit);
         if (expected + 1 == kWriteBit)
             return false;
         else
             return mCounter.compare_exchange_strong( expected,
                                                     static_cast<counter_type>(expected + 1),
-                                                    std::memory_order_acquire,
-                                                    std::memory_order_relaxed);
+                                                    memory_order_acquire,
+                                                    memory_order_relaxed);
     }
 
     void unlock_shared (void)
@@ -139,13 +148,13 @@ public:
 //  Might be able to use relaxed memory order...
 //  Wait for the write-lock to be unlocked, then claim the write slot.
         counter_type current;
-        while ((current = mCounter.fetch_or(kWriteBit, std::memory_order_acquire)) & kWriteBit);
+        while ((current = mCounter.fetch_or(kWriteBit, memory_order_acquire)) & kWriteBit);
             //this_thread::yield();
 //  Wait for readers to finish up.
         while (current != kWriteBit)
         {
             //this_thread::yield();
-            current = mCounter.load(std::memory_order_acquire);
+            current = mCounter.load(memory_order_acquire);
         }
 #if STDMUTEX_RECURSION_CHECKS
         mOwnerThread.setOwnerAfterLock(self);
@@ -159,8 +168,8 @@ public:
 #endif
         counter_type expected = 0;
         bool ret = mCounter.compare_exchange_strong(expected, kWriteBit,
-                                                    std::memory_order_acquire,
-                                                    std::memory_order_relaxed);
+                                                    memory_order_acquire,
+                                                    memory_order_relaxed);
 #if STDMUTEX_RECURSION_CHECKS
         if (ret)
             mOwnerThread.setOwnerAfterLock(self);
@@ -197,7 +206,7 @@ public:
 //    Only fully-featured implementations will be placed into namespace std.
 
 //  We already #include "mingw.mutex.h". May as well reduce redundancy.
-namespace windows7 { class shared_mutex : mingw_stdthread::windows7::mutex
+namespace windows7 { class shared_mutex : std::windows7::mutex
 {
     //using _Base = shared_mutex;
 //    Allow condition_variable_any (and only condition_variable_any) to treat a
@@ -210,10 +219,10 @@ public:
     shared_mutex(const shared_mutex&) = delete;
     shared_mutex& operator=(const shared_mutex&) = delete;*/
 
-    using mingw_stdthread::windows7::mutex::native_handle_type;
-    using mingw_stdthread::windows7::mutex::lock;
-    using mingw_stdthread::windows7::mutex::unlock;
-    using mingw_stdthread::windows7::mutex::native_handle;
+    using std::windows7::mutex::native_handle_type;
+    using std::windows7::mutex::lock;
+    using std::windows7::mutex::unlock;
+    using std::windows7::mutex::native_handle;
 
     //typedef void* native_handle_type;
     //native_handle_type native_handle() { return _Base::native_handle(); }
@@ -232,7 +241,7 @@ public:
 
 //  TryAcquireSRW functions are a Windows 7 feature.
 #if (WINVER >= _WIN32_WINNT_WIN7)
-    using mingw_stdthread::windows7::mutex::try_lock;
+    using std::windows7::mutex::try_lock;
     //bool try_lock() { return _Base::try_lock(); }
     //bool try_lock_shared() { return _Base::try_lock_shared(); }
     bool try_lock_shared (void) { return TryAcquireSRWLockShared(native_handle()) != 0; }
@@ -241,12 +250,11 @@ public:
 
 } //  Namespace windows7
 #endif  //  Compiling for Vista
-} //  Namespace mingw_stdthread
 
 #if (defined(_WIN32) && (WINVER >= _WIN32_WINNT_WIN7))
-using mingw_stdthread::windows7::shared_mutex;
+using windows7::shared_mutex;
 #else
-using mingw_stdthread::portable::shared_mutex;
+using portable::shared_mutex;
 #endif
 
 class shared_timed_mutex : shared_mutex
@@ -275,7 +283,7 @@ public:
     //void unlock_shared() { _Base::unlock_shared(); }
 
     template< class Clock, class Duration >
-    bool try_lock_until ( const std::chrono::time_point<Clock, Duration>& cutoff )
+    bool try_lock_until ( const chrono::time_point<Clock, Duration>& cutoff )
     {
 #if __cplusplus > 201703L
 	   static_assert(chrono::is_clock_v<Clock>);
@@ -302,26 +310,26 @@ public:
 #if __cplusplus >= 201402L
         while (cutoff > __now);
 #else
-        while (std::chrono::steady_clock::now() < cutoff);
+        while (chrono::steady_clock::now() < cutoff);
 #endif
         return false;
     }
 
     template< class Rep, class Period >
-    bool try_lock_for (const std::chrono::duration<Rep, Period>& rel_time)
+    bool try_lock_for (const chrono::duration<Rep, Period>& rel_time)
     {
 #if __cplusplus >= 201402L
-	    auto __rt = chrono::duration_cast<std::chrono::steady_clock::duration>(rel_time);
-	    if (ratio_greater<std::chrono::steady_clock::period, Period>())
+	    auto __rt = chrono::duration_cast<chrono::steady_clock::duration>(rel_time);
+	    if (ratio_greater<chrono::steady_clock::period, Period>())
 	        ++__rt;
-        return try_lock_until(std::chrono::steady_clock::now() + __rt);
+        return try_lock_until(chrono::steady_clock::now() + __rt);
 #else
-        return try_lock_until(std::chrono::steady_clock::now() + rel_time);
+        return try_lock_until(chrono::steady_clock::now() + rel_time);
 #endif
     }
 
     template< class Clock, class Duration >
-    bool try_lock_shared_until ( const std::chrono::time_point<Clock, Duration>& cutoff )
+    bool try_lock_shared_until ( const chrono::time_point<Clock, Duration>& cutoff )
     {
 #if __cplusplus > 201703L
 	   static_assert(chrono::is_clock_v<Clock>);
@@ -348,21 +356,21 @@ public:
 #if __cplusplus >= 201402L
         while (cutoff > __now);
 #else
-        while (std::chrono::steady_clock::now() < cutoff);
+        while (chrono::steady_clock::now() < cutoff);
 #endif
         return false;
     }
 
     template< class Rep, class Period >
-    bool try_lock_shared_for (const std::chrono::duration<Rep, Period>& rel_time)
+    bool try_lock_shared_for (const chrono::duration<Rep, Period>& rel_time)
     {
 #if __cplusplus >= 201402L
-	    auto __rt = chrono::duration_cast<std::chrono::steady_clock::duration>(rel_time);
-	    if (ratio_greater<std::chrono::steady_clock::period, Period>())
+	    auto __rt = chrono::duration_cast<chrono::steady_clock::duration>(rel_time);
+	    if (ratio_greater<chrono::steady_clock::period, Period>())
 	        ++__rt;
-	    return try_lock_shared_until(std::chrono::steady_clock::now() + __rt);
+	    return try_lock_shared_until(chrono::steady_clock::now() + __rt);
 #else
-        return try_lock_shared_until(std::chrono::steady_clock::now() + rel_time);
+        return try_lock_shared_until(chrono::steady_clock::now() + rel_time);
 #endif
     }
 };
@@ -372,15 +380,6 @@ public:
 #if ! (_GLIBCXX_USE_PTHREAD_RWLOCK_T && _GTHREAD_USE_MUTEX_TIMEDLOCK)
 # include <condition_variable>
 #endif
-
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @addtogroup mutexes
-   * @{
-   */
 
 #ifdef _GLIBCXX_HAS_GTHREADS
 
@@ -589,7 +588,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #endif
 
 #if ! (_GLIBCXX_USE_PTHREAD_RWLOCK_T && _GTHREAD_USE_MUTEX_TIMEDLOCK)
-  /// A shared mutex type implemented using std::condition_variable.
+  /// A shared mutex type implemented using condition_variable.
   class __shared_mutex_cv
   {
     friend class shared_timed_mutex;
@@ -849,7 +848,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
 	__gthread_time_t __ts =
 	  {
-	    static_cast<std::time_t>(__s.time_since_epoch().count()),
+	    static_cast<time_t>(__s.time_since_epoch().count()),
 	    static_cast<long>(__ns.count())
 	  };
 
@@ -875,7 +874,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
 	__gthread_time_t __ts =
 	  {
-	    static_cast<std::time_t>(__s.time_since_epoch().count()),
+	    static_cast<time_t>(__s.time_since_epoch().count()),
 	    static_cast<long>(__ns.count())
 	  };
 
@@ -925,7 +924,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
 	__gthread_time_t __ts =
 	  {
-	    static_cast<std::time_t>(__s.time_since_epoch().count()),
+	    static_cast<time_t>(__s.time_since_epoch().count()),
 	    static_cast<long>(__ns.count())
 	  };
 
@@ -965,7 +964,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
 	__gthread_time_t __ts =
 	  {
-	    static_cast<std::time_t>(__s.time_since_epoch().count()),
+	    static_cast<time_t>(__s.time_since_epoch().count()),
 	    static_cast<long>(__ns.count())
 	  };
 
@@ -1051,7 +1050,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #endif // _GLIBCXX_USE_PTHREAD_RWLOCK_T && _GTHREAD_USE_MUTEX_TIMEDLOCK
   };
 #endif // _GLIBCXX_HAS_GTHREADS
-}
 #endif // C++14
 
   /// shared_lock
@@ -1080,28 +1078,28 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       explicit
       shared_lock(mutex_type& __m)
-      : _M_pm(std::__addressof(__m)), _M_owns(true)
+      : _M_pm(__addressof(__m)), _M_owns(true)
       { __m.lock_shared(); }
 
       shared_lock(mutex_type& __m, defer_lock_t) noexcept
-      : _M_pm(std::__addressof(__m)), _M_owns(false) { }
+      : _M_pm(__addressof(__m)), _M_owns(false) { }
 
       shared_lock(mutex_type& __m, try_to_lock_t)
-      : _M_pm(std::__addressof(__m)), _M_owns(__m.try_lock_shared()) { }
+      : _M_pm(__addressof(__m)), _M_owns(__m.try_lock_shared()) { }
 
       shared_lock(mutex_type& __m, adopt_lock_t)
-      : _M_pm(std::__addressof(__m)), _M_owns(true) { }
+      : _M_pm(__addressof(__m)), _M_owns(true) { }
 
       template<typename _Clock, typename _Duration>
 	shared_lock(mutex_type& __m,
 		    const chrono::time_point<_Clock, _Duration>& __abs_time)
-      : _M_pm(std::__addressof(__m)),
+      : _M_pm(__addressof(__m)),
 	_M_owns(__m.try_lock_shared_until(__abs_time)) { }
 
       template<typename _Rep, typename _Period>
 	shared_lock(mutex_type& __m,
 		    const chrono::duration<_Rep, _Period>& __rel_time)
-      : _M_pm(std::__addressof(__m)),
+      : _M_pm(__addressof(__m)),
 	_M_owns(__m.try_lock_shared_for(__rel_time)) { }
 
       ~shared_lock()
@@ -1134,7 +1132,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       shared_lock& operator=(shared_lock&& __sl) noexcept
       {
-	    shared_lock(std::move(__sl)).swap(*this);
+	    shared_lock(move(__sl)).swap(*this);
 #endif
         return *this;
       }
@@ -1187,15 +1185,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       void
       swap(shared_lock& __u) noexcept
       {
-	std::swap(_M_pm, __u._M_pm);
-	std::swap(_M_owns, __u._M_owns);
+	swap(_M_pm, __u._M_pm);
+	swap(_M_owns, __u._M_owns);
       }
 
       mutex_type*
       release() noexcept
       {
 	_M_owns = false;
-	return std::__exchange(_M_pm, nullptr);
+	return __exchange(_M_pm, nullptr);
       }
 
       // Getters
