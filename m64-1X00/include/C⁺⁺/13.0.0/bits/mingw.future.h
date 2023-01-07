@@ -32,7 +32,7 @@
 #include <bits/this_thread_sleep.h> // std::this_thread::sleep_for, sleep_until
 
 //  Mutexes and condition variables are used explicitly.
-#include <mutex>
+#include <bits/std_mutex.h>
 #include "mingw.condition_variable.h"
 
 #if (defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR))

@@ -40,9 +40,18 @@
 #include <bits/functexcept.h>
 #include <bits/gthr.h>
 
-#if __cplusplus <= 201703L
+#ifndef _GLIBCXX_HAS_GTHREADS
 # include <bits/mingw.invoke.h>
 #endif
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
 
 #ifdef MINGWSTD
 #include <atomic>
@@ -66,16 +75,11 @@
 #include <handleapi.h>
 #endif
 
-namespace mingw_stdthread
-{
 //    The _NonRecursive class has mechanisms that do not play nice with direct
 //  manipulation of the native handle. This forward declaration is part of
 //  a friend class declaration.
 #if STDMUTEX_RECURSION_CHECKS
-namespace vista
-{
-class condition_variable;
-}
+namespace vista { class condition_variable; }
 #endif
 
 class recursive_mutex
@@ -292,12 +296,11 @@ public:
     }
 };
 } //  Namespace xp
-} //  Namespace mingw_stdthread
 
 #if (WINVER >= _WIN32_WINNT_WIN7)
-using mingw_stdthread::windows7::mutex;
+using windows7::mutex;
 #else
-using mingw_stdthread::xp::mutex;
+using xp::mutex;
 #endif
 
 class recursive_timed_mutex
@@ -324,7 +327,7 @@ protected:
 //  standard compliance, this must be defined in same class and at the same
 //  access-control level as every other variable in the timed_mutex.
 #if STDMUTEX_RECURSION_CHECKS
-    friend class mingw_stdthread::vista::condition_variable;
+    friend class vista::condition_variable;
     _OwnerThread mOwnerThread {};
 #endif
 public:
@@ -429,18 +432,6 @@ public:
 typedef recursive_timed_mutex timed_mutex;
 #endif
 #endif // MINGWSTD
-
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @defgroup mutexes Mutexes
-   * @ingroup concurrency
-   *
-   * Classes for mutex support.
-   * @{
-   */
 
 #ifdef _GLIBCXX_HAS_GTHREADS
   /// @cond undocumented
