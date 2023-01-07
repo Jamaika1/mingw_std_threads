@@ -1019,8 +1019,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       lock_guard<decltype(__once.mMutex)> lock(__once.mMutex);
       if (__once.mHasRun.load(memory_order_relaxed))
         return;
+#if __cplusplus < 201703L
       mingw_stdthread::detail::invoke(forward<_Callable>(__f),forward<_Args>(__args)...);
       __once.mHasRun.store(true, memory_order_release);
+#elif (__cplusplus >= 201703L && __cplusplus < 202106L)
+      std::__invoke(forward<_Callable>(__f),forward<_Args>(__args)...);
+      __once.mHasRun.store(true, memory_order_release);
+#else
+      std::__invoke_r(forward<_Callable>(__f),forward<_Args>(__args)...);
+      __once.mHasRun.store(true, memory_order_release);
+#endif
 #else
       if (__once._M_passive())
 	    return;
