@@ -55,16 +55,6 @@
 # include <bits/std_function.h>  // std::function
 #endif
 
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @addtogroup mutexes
-   * @{
-   */
-
-#ifdef MINGWSTD
 #include <atomic>
 #if STDMUTEX_RECURSION_CHECKS
 #include <cstdio>
@@ -86,6 +76,16 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 #include <handleapi.h>
 #endif
 
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
+
+#ifdef MINGWSTD
 //    The _NonRecursive class has mechanisms that do not play nice with direct
 //  manipulation of the native handle. This forward declaration is part of
 //  a friend class declaration.
