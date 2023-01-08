@@ -372,9 +372,9 @@ public:
 #endif
     }
 };
-#endif
 
-#if __cplusplus >= 201402L
+#elif __cplusplus >= 201402L
+
 #if ! (_GLIBCXX_USE_PTHREAD_RWLOCK_T && _GTHREAD_USE_MUTEX_TIMEDLOCK)
 # include <condition_variable>
 #endif

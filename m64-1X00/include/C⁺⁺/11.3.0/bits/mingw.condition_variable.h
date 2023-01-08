@@ -49,8 +49,12 @@
 #include <synchapi.h>
 #endif
 
-#include <bits/std_mutex.h>
+#include <mutex>
 #include <shared_mutex>
+
+#if __cplusplus > 201703L
+# include <stop_token>
+#endif
 
 #if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0501)
 #error To use the MinGW-std-threads library, you will need to define the macro _WIN32_WINNT to be 0x0501 (Windows XP) or higher.
@@ -274,6 +278,9 @@ namespace vista
 class condition_variable
 {
     static constexpr DWORD kInfinite = 0xffffffffl;
+#ifdef __cpp_lib_jthread
+    std::shared_ptr<std::mutex> mMutex;
+#endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
     CONDITION_VARIABLE cvariable_ = CONDITION_VARIABLE_INIT;
@@ -394,6 +401,9 @@ public:
     cv_status wait_until (std::unique_lock<std::mutex>& lock,
                           const std::chrono::time_point<Clock,Duration>& abs_time)
     {
+#if __cplusplus > 201703L
+	    static_assert(std::chrono::is_clock_v<Clock>);
+#endif
         return wait_for(lock, abs_time - Clock::now());
     }
     template <class Clock, class Duration, class Predicate>
@@ -410,12 +420,130 @@ public:
         }
         return true;
     }
+#ifdef __cpp_lib_jthread
+    template<typename Lock>
+      struct Unlock
+      {
+	explicit Unlock(Lock& __lk) : internal_cv_(__lk) { __lk.unlock(); }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+	~Unlock() noexcept(false)
+	{
+	  if (std::uncaught_exception())
+	    {
+	      __try
+	      { internal_cv_.lock(); }
+	      __catch(const __cxxabiv1::__forced_unwind&)
+	      { __throw_exception_again; }
+	      __catch(...)
+	      { }
+	    }
+	  else
+	    internal_cv_.lock();
+	}
+#pragma GCC diagnostic pop
+
+	Unlock(const Unlock&) = delete;
+	Unlock& operator=(const Unlock&) = delete;
+
+	Lock& internal_cv_;
+      };
+
+    template <class L, class Predicate>
+    bool wait(L & lock,
+              std::stop_token stoken,
+              Predicate pred)
+    {
+      if (stoken.stop_requested())
+        {
+          return pred();
+        }
+
+      std::stop_callback __cb(stoken, [this] { notify_all(); });
+      std::shared_ptr<std::mutex> __mutex = mMutex;
+      while (!pred())
+        {
+          std::unique_lock<std::mutex> __my_lock(*__mutex);
+          //std::unique_lock<decltype(internal_mutex_) > internal_lock(internal_mutex_);
+          if (stoken.stop_requested())
+            {
+              return false;
+            }
+          // *__mutex must be unlocked before re-locking lock so move
+          // ownership of *__mutex lock to an object with shorter lifetime.
+          //lock.unlock();
+          //bool success = internal_cv_.wait(internal_lock, time);
+          //lock.lock();
+          condition_variable mCond;
+          Unlock<L> __unlock(lock);
+          std::unique_lock<std::mutex> internal_lock2(std::move(__my_lock));
+          mCond.wait(internal_lock2);
+        }
+      return true;
+    }
+
+    template <class L, class Clock, class Duration, class Predicate>
+    bool wait_until(L& lock,
+                    std::stop_token stoken,
+                    const std::chrono::time_point<Clock, Duration>& abs_time,
+                    Predicate pred)
+    {
+      if (stoken.stop_requested())
+        {
+          return pred();
+        }
+
+      std::stop_callback __cb(stoken, [this] { notify_all(); });
+      std::shared_ptr<std::mutex> __mutex = mMutex;
+      while (!pred())
+        {
+          bool stop;
+          {
+            std::unique_lock<std::mutex> __my_lock(*__mutex);
+            //std::unique_lock<decltype(internal_mutex_) > internal_lock(internal_mutex_);
+            if (stoken.stop_requested())
+              {
+                return false;
+              }
+            //lock.unlock();
+            //bool success = internal_cv_.wait(internal_lock, time);
+            //lock.lock();
+            condition_variable mCond;
+            Unlock<L> __u(lock);
+            std::unique_lock<std::mutex> __my_lock2(std::move(__my_lock));
+            //std::unique_lock<decltype(internal_mutex_) > internal_lock2(move(internal_lock));
+            const auto status = mCond.wait_until(__my_lock2, abs_time);
+            stop = (status == cv_status::timeout) || stoken.stop_requested();
+          }
+          if (stop)
+            {
+              return pred();
+            }
+        }
+      return true;
+    }
+
+    template <class L, class Rep, class Period, class Predicate>
+    bool wait_for(L& lock,
+                  std::stop_token stoken,
+                  const std::chrono::duration<Rep, Period>& rel_time,
+                  Predicate pred)
+    {
+      auto abst = std::chrono::steady_clock::now() + rel_time;
+      return wait_until(lock,
+                        std::move(stoken),
+                        abst,
+                        std::move(pred));
+    }
+#endif
 };
 
 class condition_variable_any
 {
     static constexpr DWORD kInfinite = 0xffffffffl;
     using native_shared_mutex = std::windows7::shared_mutex;
+
     condition_variable internal_cv_ {};
 
 //    When available, the SRW-based mutexes should be faster than the
