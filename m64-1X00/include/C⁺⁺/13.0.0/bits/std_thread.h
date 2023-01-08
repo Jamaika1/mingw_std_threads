@@ -157,7 +157,6 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   class thread
   {
   public:
-
 #ifndef MINGWSTD
 #ifdef _GLIBCXX_HAS_GTHREADS
     using native_handle_type = __gthread_t;

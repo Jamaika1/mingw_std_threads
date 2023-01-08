@@ -49,7 +49,7 @@
 #include <synchapi.h>
 #endif
 
-#include <bits/std_mutex.h>
+#include <mutex>
 #include <shared_mutex>
 
 #if __cplusplus > 201703L
