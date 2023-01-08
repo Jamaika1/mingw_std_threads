@@ -57,6 +57,16 @@
 # include <bits/std_function.h>  // std::function
 #endif
 
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  /**
+   * @addtogroup mutexes
+   * @{
+   */
+
+#ifdef MINGWSTD
 #include <atomic>
 #if STDMUTEX_RECURSION_CHECKS
 #include <cstdio>
@@ -78,15 +88,6 @@
 #include <handleapi.h>
 #endif
 
-namespace std _GLIBCXX_VISIBILITY(default)
-{
-_GLIBCXX_BEGIN_NAMESPACE_VERSION
-
-  /**
-   * @addtogroup mutexes
-   * @{
-   */
-
 //    The _NonRecursive class has mechanisms that do not play nice with direct
 //  manipulation of the native handle. This forward declaration is part of
 //  a friend class declaration.
@@ -96,7 +97,7 @@ namespace vista
 class condition_variable;
 }
 #endif
-#ifndef _GLIBCXX_HAS_GTHREADS
+
 class recursive_mutex
 {
     CRITICAL_SECTION mHandle;
@@ -126,7 +127,7 @@ public:
         return (TryEnterCriticalSection(&mHandle)!=0);
     }
 };
-#endif
+
 #if STDMUTEX_RECURSION_CHECKS
 struct _OwnerThread
 {
@@ -311,13 +312,13 @@ public:
     }
 };
 } //  Namespace "xp"
+
 #if (WINVER >= _WIN32_WINNT_WIN7)
 using windows7::mutex;
 #else
 using xp::mutex;
 #endif
 
-#ifndef _GLIBCXX_HAS_GTHREADS
 class recursive_timed_mutex
 {
     static constexpr DWORD kWaitAbandoned = 0x00000080l;
